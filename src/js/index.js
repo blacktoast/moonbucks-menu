@@ -73,10 +73,11 @@ function App() {
     return true;
   }
 
-  function updateCount() {
-    let menuCounter = $a(".menu-list-item").length;
+  const updateCount = () => {
+    console.log(this.menu);
+    let menuCounter = this.menu[this.crruntCategory].length;
     $(".menu-count").innerText = `총 ${menuCounter}개`;
-  }
+  };
 
   const updatedMenuName = (e) => {
     const menuId = e.target.closest("li").dataset.menuId;
@@ -112,11 +113,11 @@ function App() {
       render();
       updateCount();
       initEventListenter();
+      test();
     }
   };
 
   const render = () => {
-    console.log(this.menu[this.crruntCategory]);
     const template = this.menu[this.crruntCategory]
       .map((item, index) => {
         return `<li data-menu-id="${index}" class="menu-list-item d-flex items-center py-2">
@@ -147,7 +148,9 @@ function App() {
       .join("");
     MenuList.innerHTML = template;
   };
-
+  function test() {
+    console.log(this);
+  }
   const addMenuName = (input) => {
     let menuName = $(input).value.trim();
     let chk = checkInput(menuName);
@@ -173,7 +176,7 @@ function App() {
     $("#menu-form").addEventListener("submit", (e) => {
       e.preventDefault();
     });
-
+    //메뉴이동
     $("nav").addEventListener("click", (e) => {
       const isCategoryButton =
         e.target.classList.contains("cafe-category-name");
@@ -183,6 +186,7 @@ function App() {
         console.log($("#category-title"));
         $("#category-title").innerText = `${e.target.innerText} 메뉴관리`;
         render();
+        updateCount();
       }
     });
 
