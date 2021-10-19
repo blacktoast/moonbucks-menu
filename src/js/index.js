@@ -20,6 +20,12 @@
  * 상태- 변할수있는 데이터
  * :메뉴명
  *
+ *
+ * [] 웹서버를 띄운다
+ * [] 서버에 새로운 메뉴가 추가 될수있게 요청한다
+ * [] 카데고리별 메뉴리스트를 불러온다.
+ * [] 서버에 메뉴가 수정될수 있게 요청한다.
+ * []
  */
 
 import { $, $a } from "./utils/dom.js";
@@ -38,6 +44,10 @@ const store = {
     localStorage.removeItem();
   },
 };
+
+const BASE_URL = "http://localhost:3000/api";
+
+//fetch(BASE_URL, post);
 
 function App() {
   this.menu = {
@@ -144,6 +154,15 @@ function App() {
     if (chk) {
       this.menu[this.crruntCategory].push({ name: menuName.trim() });
       store.setLocalstorage(this.menu);
+      fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name: menuName }),
+      }).then((response) => {
+        console.log(response);
+      });
       render();
       removeInput(input);
       updateCount();
