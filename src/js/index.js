@@ -21,8 +21,9 @@
  * :메뉴명
  *
  */
-const $ = (selector) => document.querySelector(selector);
-const $a = (selector) => document.querySelectorAll(selector);
+
+import { $, $a } from "./utils/dom.js";
+
 const menuKey = "esepressoMenu";
 
 const store = {
@@ -38,45 +39,86 @@ const store = {
   },
 };
 
-let removeInput = (input) => {
-  $(input).value = "";
-};
-
-function checkInput(str) {
-  if (str === "") {
-    alert("문자열을 입력해주세요");
-    return false;
-  }
-  return true;
-}
-
-function updateCount() {
-  let menuCounter = $a(".menu-list-item").length;
-  $(".menu-count").innerText = `총 ${menuCounter}개`;
-}
-
 function App() {
-  this.menu = [];
-  let espMenuList = $("#espresso-menu-list");
-  const epsMenuName = "#espresso-menu-name";
-  $("#espresso-menu-form").addEventListener("submit", (e) => {
-    e.preventDefault();
-  });
+  this.menu = {
+    espresso: [],
+    frappuccino: [],
+    blended: [],
+    teavana: [],
+    desert: [],
+  };
+  this.crruntCategory = "espresso";
+  let MenuList = $("#menu-list");
+  const MenuName = "#menu-name";
+
+  let removeInput = (input) => {
+    $(input).value = "";
+  };
+
+  function checkInput(str) {
+    if (str === "") {
+      alert("문자열을 입력해주세요");
+      return false;
+    }
+    return true;
+  }
+
+  function updateCount() {
+    let menuCounter = $a(".menu-list-item").length;
+    $(".menu-count").innerText = `총 ${menuCounter}개`;
+  }
+
+  const updatedMenuName = (e) => {
+    const menuId = e.target.closest("li").dataset.menuId;
+    const $menuName = e.target.closest("li").querySelector(".menu-name");
+    const updatedMenuName = prompt("메뉴수정을 해주세요", $menuName.innerText);
+    this.menu[this.crruntCategory][menuId].name = updatedMenuName;
+    store.setLocalstorage(this.menu);
+    $menuName.innerText = updatedMenuName;
+  };
+
+  const removeMenuName = (e) => {
+    if (confirm("메뉴를 지우시겠습니까?")) {
+      const menuId = e.target.closest("li").dataset.menuId;
+      this.menu[this.crruntCategory].splice(menuId, 1);
+      store.setLocalstorage(this.menu);
+      updateCount();
+      render();
+    }
+  };
+  const soldOut = (e) => {
+    const menuId = e.target.closest("li").dataset.menuId;
+    this.menu[this.crruntCategory][menuId].soldOut =
+      !this.menu[this.crruntCategory][menuId].soldOut;
+    store.setLocalstorage(this.menu);
+    render();
+    return;
+  };
 
   this.init = () => {
-    console.log(store.getLocalstorage().length);
-    if (store.getLocalstorage().length > 0) {
+    if (store.getLocalstorage()) {
       this.menu = store.getLocalstorage();
       console.log(this.menu);
       render();
       updateCount();
+      initEventListenter();
     }
   };
+
   const render = () => {
-    const template = this.menu
+    console.log(this.menu[this.crruntCategory]);
+    const template = this.menu[this.crruntCategory]
       .map((item, index) => {
         return `<li data-menu-id="${index}" class="menu-list-item d-flex items-center py-2">
-    <span class="w-100 pl-2 menu-name">${item.name}</span>
+    <span class="w-100 pl-2 menu-name ${item.soldOut ? "sold-out" : ""}">${
+          item.name
+        }</span>
+    <button
+    type="button"
+    class="bg-gray-50 text-gray-500 text-sm mr-1 menu-sold-out-button"
+  >
+    품절
+  </button>
     <button
       type="button"
       class="bg-gray-50 text-gray-500 text-sm mr-1 menu-edit-button"
@@ -93,14 +135,14 @@ function App() {
     `;
       })
       .join("");
-    espMenuList.innerHTML = template;
+    MenuList.innerHTML = template;
   };
 
   const addMenuName = (input) => {
     let menuName = $(input).value.trim();
     let chk = checkInput(menuName);
     if (chk) {
-      this.menu.push({ name: menuName.trim() });
+      this.menu[this.crruntCategory].push({ name: menuName.trim() });
       store.setLocalstorage(this.menu);
       render();
       removeInput(input);
@@ -108,48 +150,60 @@ function App() {
     }
   };
 
-  //수정 함수
-  espMenuList.addEventListener("click", (e) => {
-    if (e.target.classList.contains("menu-edit-button")) {
-      const menuId = e.target.closest("li").dataset.menuId;
-      const $menuName = e.target.closest("li").querySelector(".menu-name");
-      const updatedMenuName = prompt(
-        "메뉴수정을 해주세요",
-        $menuName.innerText
-      );
-      this.menu[menuId].name = updatedMenuName;
-      store.setLocalstorage(this.menu);
-      $menuName.innerText = updatedMenuName;
-    }
-  });
+  const initEventListenter = () => {
+    $("#menu-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+    });
 
-  //remove 함수
-  espMenuList.addEventListener("click", (e) => {
-    if (e.target.classList.contains("menu-remove-button")) {
-      if (confirm("메뉴를 지우시겠습니까?")) {
-        const menuId = e.target.closest("li").dataset.menuId;
-        this.menu.splice(menuId, 1);
-        console.log(menuId, this.menu);
-        e.target.closest("li").remove();
-        store.setLocalstorage(this.menu);
-        updateCount();
+    $("nav").addEventListener("click", (e) => {
+      const isCategoryButton =
+        e.target.classList.contains("cafe-category-name");
+      if (isCategoryButton) {
+        const categoryName = e.target.dataset.categoryName;
+        this.crruntCategory = categoryName;
+        console.log($("#category-title"));
+        $("#category-title").innerText = `${e.target.innerText} 메뉴관리`;
         render();
       }
-    }
-  });
+    });
 
-  //엔터 입력
-  $(epsMenuName).addEventListener("keypress", (e) => {
-    if (e.key !== "Enter") {
-      return;
-    }
-    addMenuName(epsMenuName.trim(), espMenuList);
-  });
+    //각 메뉴 버튼 이벤트 관리
+    MenuList.addEventListener("click", (e) => {
+      if (e.target.classList.contains("menu-edit-button")) {
+        updatedMenuName(e);
+        return;
+      }
+      if (e.target.classList.contains("menu-remove-button")) {
+        removeMenuName(e);
+        return;
+      }
+      if (e.target.classList.contains("menu-sold-out-button")) {
+        soldOut(e);
+        return;
+      }
+    });
 
-  //클릭 입력
-  $("#espresso-menu-submit-button").addEventListener("click", (e) => {
-    addMenuName(epsMenuName, espMenuList);
-  });
+    //remove 함수
+    MenuList.addEventListener("click", (e) => {
+      if (e.target.classList.contains("menu-remove-button")) {
+      }
+    });
+
+    //엔터 입력
+    $(MenuName).addEventListener("keypress", (e) => {
+      if (e.key !== "Enter") {
+        return;
+      }
+      addMenuName(MenuName.trim(), MenuList);
+    });
+
+    //클릭 입력
+    $("#menu-submit-button").addEventListener("click", (e) => {
+      addMenuName(MenuName, MenuList);
+    });
+  };
+  //메뉴변경
 }
+
 const app = new App();
 app.init();
