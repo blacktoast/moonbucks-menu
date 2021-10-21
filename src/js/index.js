@@ -47,6 +47,13 @@ const store = {
 
 const BASE_URL = "http://localhost:3000/api";
 
+const MenuApi = {
+  async getAllMenuByCategory(category) {
+    const response = await fetch(`${BASE_URL}/category/${category}/menu`);
+    return response.json();
+  },
+};
+
 //fetch(BASE_URL, post);
 
 function App() {
@@ -74,7 +81,6 @@ function App() {
   }
 
   const updateCount = () => {
-    console.log(this.menu);
     let menuCounter = this.menu[this.crruntCategory].length;
     $(".menu-count").innerText = `총 ${menuCounter}개`;
   };
@@ -106,15 +112,13 @@ function App() {
     return;
   };
 
-  this.init = () => {
-    if (store.getLocalstorage()) {
-      this.menu = store.getLocalstorage();
-      console.log(this.menu);
-      render();
-      updateCount();
-      initEventListenter();
-      test();
-    }
+  this.init = async () => {
+    initEventListenter();
+    this.menu[this.crruntCategory] = await MenuApi.getAllMenuByCategory(
+      this.crruntCategory
+    );
+    render();
+    updateCount();
   };
 
   const render = () => {
@@ -148,25 +152,35 @@ function App() {
       .join("");
     MenuList.innerHTML = template;
   };
-  function test() {
-    console.log(this);
-  }
-  const addMenuName = (input) => {
+
+  const addMenuName = async (input) => {
     let menuName = $(input).value.trim();
     let chk = checkInput(menuName);
     if (chk) {
       this.menu[this.crruntCategory].push({ name: menuName.trim() });
-      store.setLocalstorage(this.menu);
-      fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`, {
+      await fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ name: menuName }),
-      }).then((response) => {
-        console.log(response);
-      });
-      render();
+      })
+        .then((response) => {
+          return response.json();
+        })
+        .then((data) => {
+          console.log(data);
+        });
+
+      await fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`)
+        .then((respons) => {
+          return respons.json();
+        })
+        .then((data) => {
+          this.menu[this.crruntCategory] = data;
+          render();
+        });
+
       removeInput(input);
       updateCount();
     }
