@@ -30,7 +30,6 @@
 
 //import { json } from "stream/consumers";
 import { $, $a } from "./utils/dom.js";
-
 const menuKey = "esepressoMenu";
 
 const store = {
@@ -53,7 +52,19 @@ const MenuApi = {
     const response = await fetch(`${BASE_URL}/category/${category}/menu`);
     return response.json();
   },
-
+  async createMenu(name, category) {
+    const response = await fetch(`${BASE_URL}/category/${category}/menu`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      console.error("메뉴생성에 실패했습니다");
+    }
+    //return response;
+  },
   async updateMenu(category, name, menuId) {
     const response = await fetch(
       `${BASE_URL}/category/${category}/menu/${menuId}`,
@@ -192,30 +203,12 @@ function App() {
     let menuName = $(input).value.trim();
     let chk = checkInput(menuName);
     if (chk) {
-      this.menu[this.crruntCategory].push({ name: menuName.trim() });
-      await fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: menuName }),
-      })
-        .then((response) => {
-          return response.json();
-        })
-        .then((data) => {
-          console.log(data);
-        });
-
-      await fetch(`${BASE_URL}/category/${this.crruntCategory}/menu`)
-        .then((respons) => {
-          return respons.json();
-        })
-        .then((data) => {
-          this.menu[this.crruntCategory] = data;
-          render();
-        });
-
+      //   this.menu[this.crruntCategory].push({ name: menuName.trim() });
+      await MenuApi.createMenu(menuName, this.crruntCategory);
+      this.menu[this.crruntCategory] = await MenuApi.getAllMenuByCategory(
+        this.crruntCategory
+      );
+      render();
       removeInput(input);
       updateCount();
     }
@@ -226,7 +219,7 @@ function App() {
       e.preventDefault();
     });
     //메뉴이동
-    $("nav").addEventListener("click", (e) => {
+    $("nav").addEventListener("click", async (e) => {
       const isCategoryButton =
         e.target.classList.contains("cafe-category-name");
       if (isCategoryButton) {
@@ -234,6 +227,10 @@ function App() {
         this.crruntCategory = categoryName;
         console.log($("#category-title"));
         $("#category-title").innerText = `${e.target.innerText} 메뉴관리`;
+        console.log();
+        this.menu[this.crruntCategory] = await MenuApi.getAllMenuByCategory(
+          this.crruntCategory
+        );
         render();
         updateCount();
       }
