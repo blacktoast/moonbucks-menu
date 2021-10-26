@@ -28,6 +28,7 @@
  * []
  */
 
+import { json } from "stream/consumers";
 import { $, $a } from "./utils/dom.js";
 
 const menuKey = "esepressoMenu";
@@ -53,7 +54,22 @@ const MenuApi = {
     return response.json();
   },
 
-  async updateMenu(category, name, menuId) {},
+  async updateMenu(category, name, menuId) {
+    const response = await fetch(
+      `${BASE_URL}/category/${category}/menu/${menuId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name }),
+      }
+    );
+    if (!response.ok) {
+      console.error("에러가 발생했습니다");
+    }
+    return response.json();
+  },
 
   async toggleSoldOutMenu(category, menuId) {
     const response = await fetch(
@@ -103,6 +119,7 @@ function App() {
     const menuId = e.target.closest("li").dataset.menuId;
     const $menuName = e.target.closest("li").querySelector(".menu-name");
     const updatedMenuName = prompt("메뉴수정을 해주세요", $menuName.innerText);
+    console.log(this.menu[this.crruntCategory]);
     this.menu[this.crruntCategory][menuId].name = updatedMenuName;
     store.setLocalstorage(this.menu);
     $menuName.innerText = updatedMenuName;
